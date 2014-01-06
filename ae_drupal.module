@@ -1,0 +1,109 @@
+<?php
+/**
+ * Implements hook_help.
+ *
+ * Displays help and module information.
+ *
+ * @param path
+ *   Which path of the site we're using to display help
+ * @param arg
+ *   Array that holds the current path as returned from arg() function
+ */
+require('activationengine.php');
+define('AEURL', 'http://aengine.net/api');
+
+function ae_drupal_help($path, $arg) {
+	switch ($path) {
+		case "admin/help#ae_drupal":
+			return '<p>' . t("Provides integration with Activation Engine. <br /> Activation Engine is a game engine geared towards real life multiplayer gaming. It provides a multi channel game experience with heavy emphasis on mobile devices. Activation Engine can be extended by creating custom game actions and fully tailored game user experience. It is suitable for both casual games and education.") . '</p>';
+			break;
+	}
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ae_drupal_block_info() {
+	$blocks['ae_drupal'] = array(
+    	// The name that will appear in the block list.
+    	'info' => t('AE Drupal'),
+    	// Default setting.
+    	'cache' => DRUPAL_CACHE_PER_ROLE,
+	);
+	return $blocks;
+}
+
+function ae_drupal_create_token($params) {
+	$activationengine = new ActivationEngine($params);
+
+	$userinfo = $activationengine->createUser(array('temp' => true));
+
+	if (isset($userinfo->token)) {
+		$_SESSION['aetoken'] = $userinfo->token;
+		$_SESSION['username'] = $userinfo->username;
+		return $userinfo->token;
+	} else {
+		return false;
+	}
+}
+
+function ae_drupal_contents() {
+	$result = '';
+
+	$params = array(
+		'api_key'  => 'eeccad7839f22abd',
+		'api_secret_key' => 'e4496cf12b40062a',
+		'api_url' => 'http://aengine.net/api'
+	);
+
+	if (!isset($_SESSION['aetoken'])) {
+		session_start();
+		$token = ae_drupal_create_token($params);
+	} else {
+		$activationengine = new ActivationEngine($params);
+		$test = $activationengine->testAccessToken($_SESSION['aetoken']);
+		$token = $test != true ? ae_drupal_create_token($params) : $_SESSION['aetoken'];
+	}
+
+	$callUrl = AEURL . '/' . $_SESSION['aetoken'] . '/publictoken/getpage?frompage=timotest';
+
+	$result = drupal_http_request($callUrl, array(
+		'method' => 'GET',
+		'timeout' => 15,
+	));
+
+	if (isset($result->data)) {
+		$result = json_decode($result->data);
+	}
+	// var_dump($result);
+	return $result;
+}
+
+function ae_drupal_block_view($delta = '') {
+	switch ($delta) {
+		case 'ae_drupal':
+
+		$block['subject'] = t('Activation Engine');
+		if (user_access('access content')) {
+
+			// Use our custom function to retrieve data.
+			$result = ae_drupal_contents();
+
+			// Array to contain items for the block to render.
+			$items = array();
+
+			$items[] = stripslashes($result->points);
+			$items[] = stripslashes($result->dashboard);
+
+			// No content in the last week.
+			if (empty($items)) {
+				$block['content'] = t('No posts available.');
+			}
+			else {
+				// Pass data through theme function.
+				$block['content'] = theme('item_list', array('items' => $items));
+			}
+		}
+		return $block;			
+	}
+}
