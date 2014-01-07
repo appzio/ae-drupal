@@ -21,9 +21,9 @@ class ActivationEngine
 
   // We can set this to a high number because the main session
   // expiration will trump this.
-  const AESS_COOKIE_EXPIRE = 31556926; 	// 1 year
+  const AESS_COOKIE_EXPIRE = 31556926;  // 1 year
   const API_VERSION = '1.0';
-  const API_FORMAT = 'json';			// either json or html
+  const API_FORMAT = 'json';      // either json or html
   
   protected $api_key;
   protected $api_secret_key;
@@ -48,55 +48,56 @@ class ActivationEngine
 
   
   public function __construct($config) {
-  	$this->api_key = $config['api_key'];
-  	$this->api_secret_key = $config['api_secret_key'];
-  	$this->api_url = $config['api_url'];
-    	
+    $this->api_key = $config['api_key'];
+    $this->api_secret_key = $config['api_secret_key'];
+    $this->api_url = $config['api_url'];
+      
   }
   
   
   public function testKey(){
-  	$callurl = $this->api_url .'/' .$this->api_key .'/test/testapi';  	
-  	$return = $this->makeRequest($callurl);
-  	return $return;
+    $callurl = $this->api_url .'/' .$this->api_key .'/test/testapi';    
+    $return = $this->makeRequest($callurl);
+    return $return;
   }
   
   /* create user and returns valid access token */
   public function createUser($params){
-  	  	$callurl = $this->api_url .'/' .$this->api_key .'/users/createuser';
-  	  	$query['userinfo'] = $params;
-		$ret = $this->makeRequest($callurl,$query);
-		if(isset($ret->token) AND strlen($ret->token) == 16){
-			return $ret;
-		} else {
-			return false;
-		}
+        $callurl = $this->api_url .'/' .$this->api_key .'/users/createuser';
+        $query['userinfo'] = $params;
+    $ret = $this->makeRequest($callurl,$query);
+
+    if(isset($ret->token) AND strlen($ret->token) == 16){
+      return $ret;
+    } else {
+      return false;
+    }
   }
   
   /* drop user */
   public function dropUser($username){
-  	  	$callurl = $this->api_url .'/' .$this->api_key .'/users/dropuser';
-  	  	$query['username'] = $username;
-		$return = $this->makeRequest($callurl,$query);
-		
-  		if($return->msg == 'ok'){
- 	 		return true;
- 	 	} else {
-	  		return false;
- 	 	}
+        $callurl = $this->api_url .'/' .$this->api_key .'/users/dropuser';
+        $query['username'] = $username;
+    $return = $this->makeRequest($callurl,$query);
+    
+      if($return->msg == 'ok'){
+      return true;
+    } else {
+        return false;
+    }
   }
 
   
   /* tests whether access token is valid */
   public function testAccessToken($token){
-	$callurl = $this->api_url .'/' .$this->api_key .'/users/checktoken';  	
-  	$return = $this->makeRequest($callurl,array('token' => $token));
-  	  	  	
-  	if($return->msg == 'ok'){
-  		return true;
-  	} else {
-  		return false;
-  	}
+  $callurl = $this->api_url .'/' .$this->api_key .'/users/checktoken';    
+    $return = $this->makeRequest($callurl,array('token' => $token));
+            
+    if($return->msg == 'ok'){
+      return true;
+    } else {
+      return false;
+    }
   }
   
   protected function makeRequest($url, $query=array(), $ch=null) {
@@ -121,14 +122,14 @@ class ActivationEngine
     $params['format'] = self::API_FORMAT;
     
     if($this->encrypted_response == true){
-    	$params['encrypt_response'] = true;
+      $params['encrypt_response'] = true;
     }
         
-	if($query){
-		$params['query'] = $query;
-	}
+  if($query){
+    $params['query'] = $query;
+  }
 
-/*	echo(chr(10) .'------------START-----------' .chr(10));*/
+/*  echo(chr(10) .'------------START-----------' .chr(10));*/
 
     $params = json_encode($params);
     $params = $this->aeEncode($params);
@@ -139,7 +140,7 @@ class ActivationEngine
       print_r($params);
 
     echo($url);
-	echo(chr(10));
+  echo(chr(10));
     echo($params);
     echo(chr(10) .'again decoded:');
     echo($this->aeDecode($params));
@@ -190,25 +191,25 @@ class ActivationEngine
     }
 
     if ($result === false) {
-    	echo(curl_error($ch));
-	    curl_close($ch);
+      echo(curl_error($ch));
+      curl_close($ch);
     }
     
     curl_close($ch);
     
     if($this->encrypted_response == true){
-		$ret = aeDecode($result);
-		return json_decode($ret);
-	} else {
-/*		echo(chr(10) .'------------END-----------' .chr(10));*/
-		return json_decode($result);
-	}
-	
+    $ret = aeDecode($result);
+    return json_decode($ret);
+  } else {
+/*    echo(chr(10) .'------------END-----------' .chr(10));*/
+    return json_decode($result);
+  }
+  
   }
   
   
         public  function aeEncode($content){
-        	$cipher = $this->api_secret_key;
+          $cipher = $this->api_secret_key;
             $content = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $cipher, $content,MCRYPT_MODE_CBC,'f9sd92Adj22Aj9mB');
             $content = base64_encode($content);
             //file_put_contents(rand(1,9),$content); // you can use this for debugging
@@ -216,7 +217,7 @@ class ActivationEngine
         }
 
         public  function aeDecode($content){
-        	$cipher = $this->api_secret_key;
+          $cipher = $this->api_secret_key;
             $content = base64_decode($content);
             $content = mcrypt_decrypt(MCRYPT_RIJNDAEL_128,$cipher,$content,MCRYPT_MODE_CBC,'f9sd92Adj22Aj9mB');
             $content = rtrim($content,"\0\4");

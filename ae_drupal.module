@@ -33,6 +33,58 @@ function ae_drupal_block_info() {
 	return $blocks;
 }
 
+/**
+ * Implements hook_menu().
+ */
+function ae_drupal_menu() {
+	$items = array();
+	$items['admin/config/content/ae_drupal'] = array(
+		'title' => 'AE Drupal',
+		'description' => 'Configuration for AE Drupal module',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('ae_drupal_form'),
+		'access arguments' => array('access administration pages'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+
+/**
+ * Page callback: AE Drupal settings
+ *
+ * @see ae_drupal_menu()
+ */
+function ae_drupal_form($form, &$form_state) {
+	$form['ae_drupal_api_key'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Activation Engine API key'),
+		'#default_value' => variable_get('ae_drupal_api_key', '****************'),
+		'#size' => 16,
+		'#maxlength' => 16,
+		'#description' => t('The API key used to connect to Activation Engine.'),
+		'#required' => TRUE,
+	);
+	$form['ae_drupal_api_secret_key'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Activation Engine API key secret'),
+		'#default_value' => variable_get('ae_drupal_api_secret_key', '****************'),
+		'#size' => 16,
+		'#maxlength' => 16,
+		'#description' => t('The API key secret used to connect to Activation Engine.'),
+		'#required' => TRUE,
+	);
+	$form['ae_drupal_api_url'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Activation Engine API Endpoint Url'),
+		'#default_value' => variable_get('ae_drupal_api_url', 'http://aengine.net/api'),
+		'#size' => 20,
+		'#maxlength' => 25,
+		'#description' => t('The endpoint address used to connect to Activation Engine API.'),
+		'#required' => TRUE,
+	);	
+	return system_settings_form($form);
+}
+
 function ae_drupal_create_token($params) {
 	$activationengine = new ActivationEngine($params);
 
@@ -51,9 +103,9 @@ function ae_drupal_contents() {
 	$result = '';
 
 	$params = array(
-		'api_key'  => 'eeccad7839f22abd',
-		'api_secret_key' => 'e4496cf12b40062a',
-		'api_url' => 'http://aengine.net/api'
+		'api_key'  => variable_get('ae_drupal_api_key', 'eeccad7839f22abd'),
+		'api_secret_key' => variable_get('ae_drupal_api_secret_key', 'e4496cf12b40062a'),
+		'api_url' => variable_get('ae_drupal_api_url', AEURL),
 	);
 
 	if (!isset($_SESSION['aetoken'])) {
@@ -62,10 +114,10 @@ function ae_drupal_contents() {
 	} else {
 		$activationengine = new ActivationEngine($params);
 		$test = $activationengine->testAccessToken($_SESSION['aetoken']);
-		$token = $test != true ? ae_drupal_create_token($params) : $_SESSION['aetoken'];
+		$token = ($test != true) ? ae_drupal_create_token($params) : $_SESSION['aetoken'];
 	}
 
-	$callUrl = AEURL . '/' . $_SESSION['aetoken'] . '/publictoken/getpage?frompage=timotest';
+	$callUrl = sprintf('%s/%s/publictoken/getpage?frompage=timotest', variable_get('ae_drupal_api_url', AEURL), $_SESSION['aetoken']);
 
 	$result = drupal_http_request($callUrl, array(
 		'method' => 'GET',

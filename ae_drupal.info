@@ -2,3 +2,5 @@ name = AE Drupal
 description = Activation Engine integration module
 core = 7.x
 version = 1.0
+
+configure = admin/config/content/ae_drupal
