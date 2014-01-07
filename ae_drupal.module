@@ -26,7 +26,7 @@ function ae_drupal_help($path, $arg) {
 function ae_drupal_block_info() {
 	$blocks['ae_drupal'] = array(
     	// The name that will appear in the block list.
-    	'info' => t('AE Drupal'),
+    	'info' => t('Activation Engine'),
     	// Default setting.
     	'cache' => DRUPAL_CACHE_PER_ROLE,
 	);
@@ -85,6 +85,11 @@ function ae_drupal_form($form, &$form_state) {
 	return system_settings_form($form);
 }
 
+/**
+ * Utility function for registering
+ * an user with Activation Engine
+ * The data is stored in session variables
+ */
 function ae_drupal_create_token($params) {
 	$activationengine = new ActivationEngine($params);
 
@@ -99,6 +104,10 @@ function ae_drupal_create_token($params) {
 	}
 }
 
+/**
+ * This gets the AE content via an http request
+ * and returns the decoded result
+ */
 function ae_drupal_contents() {
 	$result = '';
 
@@ -125,36 +134,28 @@ function ae_drupal_contents() {
 	));
 
 	if (isset($result->data)) {
-		$result = json_decode($result->data);
+		return json_decode($result->data);
 	}
-	// var_dump($result);
-	return $result;
+
+	return false;
 }
 
+/**
+ * This renders the html into a block
+ */
 function ae_drupal_block_view($delta = '') {
 	switch ($delta) {
 		case 'ae_drupal':
 
 		$block['subject'] = t('Activation Engine');
+
 		if (user_access('access content')) {
 
 			// Use our custom function to retrieve data.
 			$result = ae_drupal_contents();
 
-			// Array to contain items for the block to render.
-			$items = array();
-
-			$items[] = stripslashes($result->points);
-			$items[] = stripslashes($result->dashboard);
-
-			// No content in the last week.
-			if (empty($items)) {
-				$block['content'] = t('No posts available.');
-			}
-			else {
-				// Pass data through theme function.
-				$block['content'] = theme('item_list', array('items' => $items));
-			}
+			// Assign content to the block
+			$block['content'] = $result ? stripslashes($result->dashboard) : t('Nothing to display at the moment.');
 		}
 		return $block;			
 	}
