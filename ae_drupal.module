@@ -46,6 +46,20 @@ function ae_drupal_menu() {
 		'access arguments' => array('access administration pages'),
 		'type' => MENU_NORMAL_ITEM,
 	);
+
+	$items['aedrupal/register_url'] = array(
+		'title' => 'AE Current Page Recording',
+		'type' => MENU_CALLBACK,
+		'page callback' => 'ae_drupal_register_url',
+		'access arguments' => array('access content'),
+	);
+
+	$items['aedrupal/get_dashboard'] = array(
+		'title' => 'AE Get Dashboard',
+		'type' => MENU_CALLBACK,
+		'page callback' => 'ae_drupal_get_dashboard',
+		'access arguments' => array('access content'),
+	);	
 	return $items;
 }
 
@@ -86,6 +100,57 @@ function ae_drupal_form($form, &$form_state) {
 }
 
 /**
+ * Page callback: AE Drupal page url save
+ *
+ * @see ae_drupal_menu()
+ */
+function ae_drupal_register_url() {
+	// Only do this for ajax requests
+	if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+		if (isset($_SESSION['aetoken'])) {
+
+	        $callUrl = sprintf('%s/%s/publictoken/visitpage?page=%s',
+	        	variable_get('ae_drupal_api_url', AEURL), 
+	        	$_SESSION['aetoken'], 
+	        	isset($_POST['current_page']) ? $_POST['current_page'] : $_SERVER['PHP_SELF']
+        	);
+
+			$result = drupal_http_request($callUrl, array(
+				'method' => 'GET',
+				'timeout' => 15,
+			));
+
+			if (isset($result->data)) {
+	        	$return = json_decode($result->data);
+
+	        	// If we have a message token return it
+				if (isset($return->msgtoken)) {
+					drupal_json_output($return->msgtoken);
+				}
+
+				// Else, if we have message carry on
+				if (isset($return->msg) && $return->msg == 'ok') {				
+					drupal_exit();
+				}
+	        }
+	    }
+	}
+}
+
+/**
+ * Page callback: AE Drupal dashboard
+ *
+ * @see ae_drupal_menu()
+ */
+function ae_drupal_get_dashboard() {
+	if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+		$contents = ae_drupal_get_contents();
+		drupal_json_output($contents);
+	}
+}
+
+
+/**
  * Utility function for registering
  * an user with Activation Engine
  * The data is stored in session variables
@@ -108,13 +173,13 @@ function ae_drupal_create_token($params) {
  * This gets the AE content via an http request
  * and returns the decoded result
  */
-function ae_drupal_contents() {
+function ae_drupal_get_contents() {
 	$result = '';
 
 	$params = array(
-		'api_key'  => variable_get('ae_drupal_api_key', 'eeccad7839f22abd'),
-		'api_secret_key' => variable_get('ae_drupal_api_secret_key', 'e4496cf12b40062a'),
-		'api_url' => variable_get('ae_drupal_api_url', AEURL),
+		'api_key'  			=> variable_get('ae_drupal_api_key', 'eeccad7839f22abd'),
+		'api_secret_key' 	=> variable_get('ae_drupal_api_secret_key', 'e4496cf12b40062a'),
+		'api_url' 			=> variable_get('ae_drupal_api_url', AEURL),
 	);
 
 	if (!isset($_SESSION['aetoken'])) {
@@ -152,10 +217,22 @@ function ae_drupal_block_view($delta = '') {
 		if (user_access('access content')) {
 
 			// Use our custom function to retrieve data.
-			$result = ae_drupal_contents();
+			// $result = ae_drupal_get_contents();
 
 			// Assign content to the block
-			$block['content'] = $result ? stripslashes($result->dashboard) : t('Nothing to display at the moment.');
+			// $block['content'] = $result ? stripslashes($result->dashboard) : t('Nothing to display at the moment.');
+			$content = ob_start();
+			?>
+				<div id="ae-dashboard" class="dropdown is-not-empty">
+					<div class="dropdown-toggle">
+						<div class="dropdown-toggle-title" id="ae-title">0 Bonus Points</div>
+					</div>
+					<div class="dropdown-menu left-hand" id="ae-content">
+						<div id="some_id">Loading...</div>
+					</div>
+				</div>
+			<?php
+			$block['content'] = ob_get_clean();
 		}
 		return $block;			
 	}

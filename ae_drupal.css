@@ -160,6 +160,16 @@ li.awarditem_grey {
     text-align: left;
     font-size: 1.2em;
     margin-right: 10px;
-
-
 }
+
+#ae-content {
+    border-top: 5px solid #39B44A;
+    border-bottom: 5px solid #39B44A;
+    min-width: 400px;
+    color: black;
+    background-color: #fff;
+}
+
+#ae-content a:link, #ae-content a:visited {color: #000};
+
+#ae-title {cursor: pointer;}

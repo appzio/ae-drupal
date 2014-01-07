@@ -1,7 +1,12 @@
 name = AE Drupal
-description = Activation Engine integration module
+description = Provides integration with Activation Engine
 core = 7.x
 version = 1.0
 
 configure = admin/config/content/ae_drupal
 stylesheets[all][] = ae_drupal.css
+stylesheets[all][] = modal_dropdown.css
+scripts[] = prototype.js
+scripts[] = effects.js
+scripts[] = modal.js
+scripts[] = ae_engine.js
