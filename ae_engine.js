@@ -3,7 +3,7 @@ jQuery(document).ready(function($){
         type: 'GET',
         url: '/aedrupal/get_dashboard',
         complete: function(result) { 
-            // console.log(result);
+            console.log(result);
 
             if (result.status != 404) {
                 var data = JSON.parse(result.response);

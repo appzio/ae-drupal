@@ -145,6 +145,7 @@ function ae_drupal_register_url() {
 function ae_drupal_get_dashboard() {
 	if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
 		$contents = ae_drupal_get_contents();
+		$_SESSION['ae_points'] = $contents->points;
 		drupal_json_output($contents);
 	}
 }
@@ -177,8 +178,8 @@ function ae_drupal_get_contents() {
 	$result = '';
 
 	$params = array(
-		'api_key'  			=> variable_get('ae_drupal_api_key', 'eeccad7839f22abd'),
-		'api_secret_key' 	=> variable_get('ae_drupal_api_secret_key', 'e4496cf12b40062a'),
+		'api_key'  			=> variable_get('ae_drupal_api_key'),
+		'api_secret_key' 	=> variable_get('ae_drupal_api_secret_key'),
 		'api_url' 			=> variable_get('ae_drupal_api_url', AEURL),
 	);
 
@@ -215,17 +216,12 @@ function ae_drupal_block_view($delta = '') {
 		$block['subject'] = t('Activation Engine');
 
 		if (user_access('access content')) {
-
-			// Use our custom function to retrieve data.
-			// $result = ae_drupal_get_contents();
-
-			// Assign content to the block
-			// $block['content'] = $result ? stripslashes($result->dashboard) : t('Nothing to display at the moment.');
+			$bonusPoints = isset($_SESSION['ae_points']) ? $_SESSION['ae_points'] : 0;
 			$content = ob_start();
 			?>
 				<div id="ae-dashboard" class="dropdown is-not-empty">
 					<div class="dropdown-toggle">
-						<div class="dropdown-toggle-title" id="ae-title">0 Bonus Points</div>
+						<div class="dropdown-toggle-title" id="ae-title"><?php echo $bonusPoints; ?> Bonus Points</div>
 					</div>
 					<div class="dropdown-menu left-hand" id="ae-content">
 						<div id="some_id">Loading...</div>
